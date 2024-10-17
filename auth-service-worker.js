@@ -18,17 +18,41 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener("fetch", (event) => {
+  /* 
+  
+  FIX FROM https://github.com/firebase/friendlyeats-web/issues/295#issuecomment-2318574547
+  
+  FIX START 
+  */
+  if (!firebaseConfig) {
+    const serializedFirebaseConfig = new URL(location).searchParams.get(
+      "firebaseConfig"
+    );
+    firebaseConfig = JSON.parse(serializedFirebaseConfig);
+  }
+  /* FIX END */
   const { origin } = new URL(event.request.url);
   if (origin !== self.location.origin) return;
   event.respondWith(fetchWithFirebaseHeaders(event.request));
 });
 
-// TODO: add Firebase Authentication headers to request
 async function fetchWithFirebaseHeaders(request) {
-  return await fetch(request);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const installations = getInstallations(app);
+  const headers = new Headers(request.headers);
+  const [authIdToken, installationToken] = await Promise.all([
+    getAuthIdToken(auth),
+    getToken(installations),
+  ]);
+  headers.append("Firebase-Instance-ID-Token", installationToken);
+  if (authIdToken) headers.append("Authorization", `Bearer ${authIdToken}`);
+  const newRequest = new Request(request, { headers });
+  return await fetch(newRequest);
 }
 
-// TODO: get user token
 async function getAuthIdToken(auth) {
-  throw new Error('not implemented');
+  await auth.authStateReady();
+  if (!auth.currentUser) return;
+  return await getIdToken(auth.currentUser);
 }
