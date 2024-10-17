@@ -4,3 +4,7 @@ lib/firebase/config.js
 node_modules/
 .env
 .local/
+.yaml
+.env
+apphosting.yaml
+.env.local
