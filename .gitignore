@@ -7,4 +7,7 @@ node_modules/
 .yaml
 .env
 apphosting.yaml
-.env.local
+**/*-debug.log
+**/.DS_Store
+**/.env.local
+**/.next/
